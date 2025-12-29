@@ -1,26 +1,26 @@
 package httpserver
 
 import (
-	branchHTTP "thuchanhgolang/internal/branch/delivery/http"
-	branchMongo "thuchanhgolang/internal/branch/repository/mongo"
-	branchUsecase "thuchanhgolang/internal/branch/usecase"
+	shopHTTP "thuchanhgolang/internal/shop/delivery/http"
+	shopMongo "thuchanhgolang/internal/shop/repository/mongo"
+	shopUsecase "thuchanhgolang/internal/shop/usecase"
 )
 
 func (srv HTTPServer) mapHandlers() {
-	// jwtManager := jwt.NewManager(srv.jwtSecretKey)
+	// // jwtManager := jwt.NewManager(srv.jwtSecretKey)
 	// Repositories
-	branchRepo := branchMongo.NewRepository(srv.l, srv.database)
+	shopRepo := shopMongo.NewRepository(srv.l, srv.database)
 
 	// Usecases
-	branchUC := branchUsecase.New(srv.l, branchRepo)
+	shopUC := shopUsecase.NewUsecase(srv.l, shopRepo)
 
 	// Handlers
-	branchH := branchHTTP.New(srv.l, branchUC)
+	shopH := shopHTTP.New(srv.l, shopUC)
 
-	// Middlewares
-	// mw := middleware.New(srv.l, jwtManager, srv.encrypter)
+	// // Middlewares
+	// // mw := middleware.New(srv.l, jwtManager, srv.encrypter)
 
 	api := srv.gin.Group("/api/v1")
 
-	branchHTTP.MapRoutes(api.Group("/branches"), branchH)
+	shopHTTP.MapRoutes(api.Group("/shops"), shopH)
 }
