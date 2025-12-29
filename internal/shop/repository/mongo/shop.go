@@ -105,3 +105,18 @@ func (repo implRepository) Delete(ctx context.Context, sc models.Scope, id primi
 
 	return nil
 }
+
+// HasRegions kiểm tra xem shop có region nào không
+func (repo implRepository) HasRegions(ctx context.Context, shopID primitive.ObjectID) (bool, error) {
+	regionCollection := repo.db.Collection("regions")
+
+	// Đếm số region thuộc shop này
+	filter := bson.M{"shop_id": shopID}
+	count, err := regionCollection.CountDocuments(ctx, filter)
+	if err != nil {
+		repo.l.Errorf(ctx, "shop.mongo.HasRegions.CountDocuments: %v", err)
+		return false, err
+	}
+
+	return count > 0, nil
+}
