@@ -22,4 +22,7 @@ type Repository interface {
 
 	// Delete xóa shop khỏi database
 	Delete(ctx context.Context, sc models.Scope, id primitive.ObjectID) error
+
+	// HasRegions kiểm tra xem shop có region nào không
+	HasRegions(ctx context.Context, shopID primitive.ObjectID) (bool, error)
 }

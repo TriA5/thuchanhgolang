@@ -60,10 +60,23 @@ func (uc *implUsecase) Update(ctx context.Context, sc models.Scope, input shop.U
 	return updatedShop, nil
 }
 
-// Delete xóa shop
+// Delete xóa shop (kiểm tra trước xem có đang được dùng không)
 func (uc *implUsecase) Delete(ctx context.Context, sc models.Scope, id primitive.ObjectID) error {
-	// Gọi repository để xóa shop
-	err := uc.repo.Delete(ctx, sc, id)
+	// Bước 1: Kiểm tra xem shop có region nào không
+	hasRegions, err := uc.repo.HasRegions(ctx, id)
+	if err != nil {
+		uc.l.Errorf(ctx, "shop.usecase.Delete.repo.HasRegions: %v", err)
+		return err
+	}
+
+	// Bước 2: Nếu có region, không cho phép xóa
+	if hasRegions {
+		uc.l.Warnf(ctx, "shop.usecase.Delete: shop is being used by regions")
+		return shop.ErrShopInUse
+	}
+
+	// Bước 3: Gọi repository để xóa shop
+	err = uc.repo.Delete(ctx, sc, id)
 	if err != nil {
 		uc.l.Errorf(ctx, "shop.usecase.Delete.repo.Delete: %v", err)
 		return err
