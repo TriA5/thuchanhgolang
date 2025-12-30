@@ -1,0 +1,18 @@
+mode: set
+thuchanhgolang/internal/region/usecase/new.go:15.70,20.2 1 0
+thuchanhgolang/internal/region/usecase/region.go:13.118,22.16 3 1
+thuchanhgolang/internal/region/usecase/region.go:22.16,25.3 2 1
+thuchanhgolang/internal/region/usecase/region.go:28.2,28.23 1 1
+thuchanhgolang/internal/region/usecase/region.go:32.116,35.16 2 1
+thuchanhgolang/internal/region/usecase/region.go:35.16,38.3 2 0
+thuchanhgolang/internal/region/usecase/region.go:40.2,40.20 1 1
+thuchanhgolang/internal/region/usecase/region.go:44.118,53.16 3 1
+thuchanhgolang/internal/region/usecase/region.go:53.16,56.3 2 0
+thuchanhgolang/internal/region/usecase/region.go:58.2,58.27 1 1
+thuchanhgolang/internal/region/usecase/region.go:62.98,65.16 2 1
+thuchanhgolang/internal/region/usecase/region.go:65.16,68.3 2 0
+thuchanhgolang/internal/region/usecase/region.go:71.2,71.17 1 1
+thuchanhgolang/internal/region/usecase/region.go:71.17,74.3 2 1
+thuchanhgolang/internal/region/usecase/region.go:77.2,78.16 2 1
+thuchanhgolang/internal/region/usecase/region.go:78.16,81.3 2 0
+thuchanhgolang/internal/region/usecase/region.go:83.2,83.12 1 1

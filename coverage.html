@@ -1,0 +1,211 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>usecase: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">thuchanhgolang/internal/region/usecase/new.go (0.0%)</option>
+				
+				<option value="file1">thuchanhgolang/internal/region/usecase/region.go (72.4%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package usecase
+
+import (
+        "thuchanhgolang/internal/region"
+        "thuchanhgolang/pkg/log"
+)
+
+// implUsecase là implementation của region.Usecase interface
+type implUsecase struct {
+        l    log.Logger        // Logger để ghi log
+        repo region.Repository // Repository để tương tác với database
+}
+
+// NewUsecase tạo usecase mới cho region
+func NewUsecase(l log.Logger, repo region.Repository) region.Usecase <span class="cov0" title="0">{
+        return &amp;implUsecase{
+                l:    l,
+                repo: repo,
+        }
+}</span>
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package usecase
+
+import (
+        "context"
+
+        "thuchanhgolang/internal/models"
+        "thuchanhgolang/internal/region"
+
+        "go.mongodb.org/mongo-driver/bson/primitive"
+)
+
+// Create tạo region mới
+func (uc *implUsecase) Create(ctx context.Context, sc models.Scope, input region.CreateInput) (models.Region, error) <span class="cov8" title="1">{
+        // Bước 1: Chuyển đổi input thành options cho repository
+        opts := region.CreateOptions{
+                ShopID: input.ShopID,
+                Name:   input.Name,
+        }
+
+        // Bước 2: Gọi repository để lưu vào database
+        newRegion, err := uc.repo.Create(ctx, sc, opts)
+        if err != nil </span><span class="cov8" title="1">{
+                uc.l.Errorf(ctx, "region.usecase.Create.repo.Create: %v", err)
+                return models.Region{}, err
+        }</span>
+
+        // Bước 3: Trả về region đã tạo
+        <span class="cov8" title="1">return newRegion, nil</span>
+}
+
+// GetByID lấy thông tin region theo ID
+func (uc *implUsecase) GetByID(ctx context.Context, sc models.Scope, id primitive.ObjectID) (models.Region, error) <span class="cov8" title="1">{
+        // Gọi repository để lấy region từ database
+        region, err := uc.repo.GetByID(ctx, sc, id)
+        if err != nil </span><span class="cov0" title="0">{
+                uc.l.Errorf(ctx, "region.usecase.GetByID.repo.GetByID: %v", err)
+                return models.Region{}, err
+        }</span>
+
+        <span class="cov8" title="1">return region, nil</span>
+}
+
+// Update cập nhật thông tin region (chỉ cho phép đổi tên, không đổi shop)
+func (uc *implUsecase) Update(ctx context.Context, sc models.Scope, input region.UpdateInput) (models.Region, error) <span class="cov8" title="1">{
+        // Bước 1: Chuyển đổi input thành options
+        opts := region.UpdateOptions{
+                ID:   input.ID,
+                Name: input.Name,
+        }
+
+        // Bước 2: Gọi repository để update
+        updatedRegion, err := uc.repo.Update(ctx, sc, opts)
+        if err != nil </span><span class="cov0" title="0">{
+                uc.l.Errorf(ctx, "region.usecase.Update.repo.Update: %v", err)
+                return models.Region{}, err
+        }</span>
+
+        <span class="cov8" title="1">return updatedRegion, nil</span>
+}
+
+// Delete xóa region (kiểm tra trước xem có đang được dùng không)
+func (uc *implUsecase) Delete(ctx context.Context, sc models.Scope, id primitive.ObjectID) error <span class="cov8" title="1">{
+        // Bước 1: Kiểm tra xem region có branch nào không
+        hasBranches, err := uc.repo.HasBranches(ctx, id)
+        if err != nil </span><span class="cov0" title="0">{
+                uc.l.Errorf(ctx, "region.usecase.Delete.repo.HasBranches: %v", err)
+                return err
+        }</span>
+
+        // Bước 2: Nếu có branch, không cho phép xóa
+        <span class="cov8" title="1">if hasBranches </span><span class="cov8" title="1">{
+                uc.l.Warnf(ctx, "region.usecase.Delete: region is being used by branches")
+                return region.ErrRegionInUse
+        }</span>
+
+        // Bước 3: Gọi repository để xóa region
+        <span class="cov8" title="1">err = uc.repo.Delete(ctx, sc, id)
+        if err != nil </span><span class="cov0" title="0">{
+                uc.l.Errorf(ctx, "region.usecase.Delete.repo.Delete: %v", err)
+                return err
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
