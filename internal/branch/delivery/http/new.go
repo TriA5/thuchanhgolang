@@ -1,0 +1,30 @@
+package http
+
+import (
+	"thuchanhgolang/internal/branch"
+	"thuchanhgolang/pkg/log"
+
+	"github.com/gin-gonic/gin"
+)
+
+// handler là implementation của Handler interface
+type handler struct {
+	l  log.Logger     // Logger để ghi log
+	uc branch.Usecase // Usecase để xử lý business logic
+}
+
+// Handler định nghĩa interface cho HTTP handler
+type Handler interface {
+	create(c *gin.Context)
+	getByID(c *gin.Context)
+	update(c *gin.Context)
+	delete(c *gin.Context)
+}
+
+// New tạo HTTP handler mới cho region
+func New(l log.Logger, uc branch.Usecase) Handler {
+	return handler{
+		l:  l,
+		uc: uc,
+	}
+}
