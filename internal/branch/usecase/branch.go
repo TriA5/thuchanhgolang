@@ -58,25 +58,38 @@ func (uc *implUsecase) Update(ctx context.Context, sc models.Scope, input branch
 	return updatedBranch, nil
 }
 
-// Delete xóa region (kiểm tra trước xem có đang được dùng không)
+// Delete xóa branch (kiểm tra trước xem có đang được dùng không)
 func (uc *implUsecase) Delete(ctx context.Context, sc models.Scope, id primitive.ObjectID) error {
-	// Bước 1: Kiểm tra xem region có branch nào không
+	// Bước 1: Kiểm tra xem branch có department nào không
 	hasDepartments, err := uc.repo.HasDepartments(ctx, id)
 	if err != nil {
 		uc.l.Errorf(ctx, "branch.usecase.Delete.repo.HasDepartments: %v", err)
 		return err
 	}
 
-	// Bước 2: Nếu có branch, không cho phép xóa
+	// Bước 2: Nếu có department, không cho phép xóa
 	if hasDepartments {
 		uc.l.Warnf(ctx, "branch.usecase.Delete: branch is being used by departments")
 		return branch.ErrBranchInUse
 	}
 
-	// Bước 3: Gọi repository để xóa region
+	// Bước 3: Kiểm tra xem branch có user nào không
+	hasUsers, err := uc.repo.HasUsers(ctx, id)
+	if err != nil {
+		uc.l.Errorf(ctx, "branch.usecase.Delete.repo.HasUsers: %v", err)
+		return err
+	}
+
+	// Bước 4: Nếu có user, không cho phép xóa
+	if hasUsers {
+		uc.l.Warnf(ctx, "branch.usecase.Delete: branch is being used by users")
+		return branch.ErrBranchInUse
+	}
+
+	// Bước 5: Gọi repository để xóa branch
 	err = uc.repo.Delete(ctx, sc, id)
 	if err != nil {
-		uc.l.Errorf(ctx, "region.usecase.Delete.repo.Delete: %v", err)
+		uc.l.Errorf(ctx, "branch.usecase.Delete.repo.Delete: %v", err)
 		return err
 	}
 

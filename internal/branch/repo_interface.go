@@ -26,4 +26,7 @@ type Repository interface {
 
 	// HasDepartments kiểm tra xem branch có department nào không
 	HasDepartments(ctx context.Context, branchID primitive.ObjectID) (bool, error)
+
+	// HasUsers kiểm tra xem branch có user nào không
+	HasUsers(ctx context.Context, branchID primitive.ObjectID) (bool, error)
 }
