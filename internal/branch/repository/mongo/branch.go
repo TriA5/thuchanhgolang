@@ -108,3 +108,18 @@ func (repo implRepository) HasDepartments(ctx context.Context, branchID primitiv
 
 	return count > 0, nil
 }
+
+// HasUsers kiểm tra xem branch có user nào không
+func (repo implRepository) HasUsers(ctx context.Context, branchID primitive.ObjectID) (bool, error) {
+	userCollection := repo.db.Collection("users")
+
+	// Đếm số user thuộc branch này
+	filter := bson.M{"branch_id": branchID}
+	count, err := userCollection.CountDocuments(ctx, filter)
+	if err != nil {
+		repo.l.Errorf(ctx, "branch.mongo.HasUsers.CountDocuments: %v", err)
+		return false, err
+	}
+
+	return count > 0, nil
+}

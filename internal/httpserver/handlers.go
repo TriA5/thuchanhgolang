@@ -20,6 +20,11 @@ import (
 	shopHTTP "thuchanhgolang/internal/shop/delivery/http"
 	shopMongo "thuchanhgolang/internal/shop/repository/mongo"
 	shopUsecase "thuchanhgolang/internal/shop/usecase"
+
+	// users
+	userHTTP "thuchanhgolang/internal/user/delivery/http"
+	userMongo "thuchanhgolang/internal/user/repository/mongo"
+	userUsecase "thuchanhgolang/internal/user/usecase"
 )
 
 func (srv HTTPServer) mapHandlers() {
@@ -29,16 +34,22 @@ func (srv HTTPServer) mapHandlers() {
 	regionRepo := regionMongo.NewRepository(srv.l, srv.database)
 	branchRepo := branchMongo.NewRepository(srv.l, srv.database)
 	departmentRepo := departmentMongo.NewRepository(srv.l, srv.database)
+	userRepo := userMongo.NewRepository(srv.l, srv.database)
+
 	// Usecases
 	shopUC := shopUsecase.NewUsecase(srv.l, shopRepo)
 	regionUC := regionUsecase.NewUsecase(srv.l, regionRepo)
 	branchUC := branchUsecase.NewUsecase(srv.l, branchRepo)
 	departmentUC := departmentUsecase.NewUsecase(srv.l, departmentRepo)
+	userUC := userUsecase.NewUsecase(srv.l, userRepo, branchRepo, departmentRepo, regionRepo) // Inject repos for cascade query
+
 	// Handlers
 	shopH := shopHTTP.New(srv.l, shopUC)
 	regionH := regionHTTP.New(srv.l, regionUC)
 	branchH := branchHTTP.New(srv.l, branchUC)
 	departmentH := departmentHTTP.New(srv.l, departmentUC)
+	userH := userHTTP.New(srv.l, userUC)
+
 	// // Middlewares
 	// // mw := middleware.New(srv.l, jwtManager, srv.encrypter)
 
@@ -48,4 +59,5 @@ func (srv HTTPServer) mapHandlers() {
 	regionHTTP.MapRoutes(api.Group("/regions"), regionH)
 	branchHTTP.MapRoutes(api.Group("/branches"), branchH)
 	departmentHTTP.MapRoutes(api.Group("/departments"), departmentH)
+	userHTTP.MapRoutes(api.Group("/users"), userH)
 }
