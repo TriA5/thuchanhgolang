@@ -5,25 +5,25 @@ import (
 	"thuchanhgolang/internal/department"
 	"thuchanhgolang/internal/region"
 	"thuchanhgolang/internal/user"
+	"thuchanhgolang/internal/user/repository/query"
 	"thuchanhgolang/pkg/log"
 )
 
 // implUsecase là implementation của user.Usecase
 type implUsecase struct {
-	l          log.Logger            // Logger
-	repo       user.Repository       // User repository
-	branchRepo branch.Repository     // Branch repository (để lấy parent IDs)
-	deptRepo   department.Repository // Department repository (để lấy parent IDs)
-	regionRepo region.Repository     // Region repository (để lấy ShopID)
+	l            log.Logger      // Logger
+	repo         user.Repository // User repository
+	queryService query.Service   // Query service (để lấy parent IDs)
 }
 
 // NewUsecase tạo user usecase mới
 func NewUsecase(l log.Logger, repo user.Repository, branchRepo branch.Repository, deptRepo department.Repository, regionRepo region.Repository) user.Usecase {
+	// Tạo query service
+	queryService := query.NewService(l, branchRepo, deptRepo, regionRepo)
+
 	return &implUsecase{
-		l:          l,
-		repo:       repo,
-		branchRepo: branchRepo,
-		deptRepo:   deptRepo,
-		regionRepo: regionRepo,
+		l:            l,
+		repo:         repo,
+		queryService: queryService,
 	}
 }

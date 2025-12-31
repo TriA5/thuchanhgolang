@@ -12,11 +12,17 @@ import (
 //
 //go:generate mockery --name=Repository
 type Repository interface {
+	// Register tạo user mới với thông tin cơ bản
+	Register(ctx context.Context, opts RegisterOptions) (models.User, error)
+
 	// Create tạo user mới trong database
 	Create(ctx context.Context, sc models.Scope, opts CreateOptions) (models.User, error)
 
 	// GetByID lấy user theo ID
 	GetByID(ctx context.Context, sc models.Scope, id primitive.ObjectID) (models.User, error)
+
+	// GetByUsername lấy user theo username
+	GetByUsername(ctx context.Context, username string) (models.User, error)
 
 	// Update cập nhật thông tin user
 	Update(ctx context.Context, sc models.Scope, opts UpdateOptions) (models.User, error)

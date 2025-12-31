@@ -2,6 +2,13 @@ package user
 
 import "go.mongodb.org/mongo-driver/bson/primitive"
 
+// RegisterOptions là options để đăng ký user mới (chỉ thông tin cơ bản)
+type RegisterOptions struct {
+	Username string
+	Password string // Password đã được hash
+	Email    string
+}
+
 // CreateOptions là tùy chọn để tạo user trong database
 type CreateOptions struct {
 	Username     string

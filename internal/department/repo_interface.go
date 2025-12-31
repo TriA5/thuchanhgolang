@@ -24,6 +24,6 @@ type Repository interface {
 	// Delete xóa region khỏi database
 	Delete(ctx context.Context, sc models.Scope, id primitive.ObjectID) error
 
-	// HasDepartments kiểm tra xem branch có department nào không
+	// HasBranches kiểm tra xem region có branch nào không
 	HasUsers(ctx context.Context, departmentID primitive.ObjectID) (bool, error)
 }

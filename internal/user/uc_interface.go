@@ -12,6 +12,9 @@ import (
 //
 //go:generate mockery --name=Usecase
 type Usecase interface {
+	// Register đăng ký user mới (chỉ thông tin cơ bản)
+	Register(ctx context.Context, input RegisterInput) (models.User, error)
+
 	// Create tạo user mới
 	Create(ctx context.Context, sc models.Scope, input CreateInput) (models.User, error)
 
