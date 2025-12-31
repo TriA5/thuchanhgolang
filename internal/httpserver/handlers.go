@@ -75,13 +75,33 @@ func (srv HTTPServer) mapHandlers() {
 	// Public routes (không cần token)
 	authHTTP.MapRoutes(api.Group("/auth"), authH)
 
-	// Protected routes (cần token)
+	// Protected routes với authentication
 	protected := api.Group("")
 	protected.Use(authMiddleware.Auth())
+	protected.Use(authMiddleware.SetScopeFromPayload()) // Set scope từ JWT
 
-	shopHTTP.MapRoutes(protected.Group("/shops"), shopH)
-	regionHTTP.MapRoutes(protected.Group("/regions"), regionH)
-	branchHTTP.MapRoutes(protected.Group("/branches"), branchH)
-	departmentHTTP.MapRoutes(protected.Group("/departments"), departmentH)
-	userHTTP.MapRoutes(protected.Group("/users"), userH)
+	// Shop routes - Chỉ Manager
+	shops := protected.Group("/shops")
+	shops.Use(authMiddleware.CheckShopAccess())
+	shopHTTP.MapRoutes(shops, shopH)
+
+	// Region routes - Manager hoặc RegionManager
+	regions := protected.Group("/regions")
+	regions.Use(authMiddleware.CheckRegionAccess())
+	regionHTTP.MapRoutes(regions, regionH)
+
+	// Branch routes - Manager, RegionManager, BranchManager
+	branches := protected.Group("/branches")
+	branches.Use(authMiddleware.CheckBranchAccess())
+	branchHTTP.MapRoutes(branches, branchH)
+
+	// Department routes - Manager, RegionManager, BranchManager, HeadOfDepartment
+	departments := protected.Group("/departments")
+	departments.Use(authMiddleware.CheckDepartmentAccess())
+	departmentHTTP.MapRoutes(departments, departmentH)
+
+	// User routes - Tất cả roles (Employee chỉ GET)
+	users := protected.Group("/users")
+	users.Use(authMiddleware.CheckUserAccess())
+	userHTTP.MapRoutes(users, userH)
 }

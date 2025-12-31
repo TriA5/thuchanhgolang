@@ -1,13 +1,21 @@
 package auth
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"thuchanhgolang/internal/models"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 // RegisterInput là input để đăng ký user mới từ HTTP layer
 type RegisterInput struct {
-	Username string
-	Password string
-	Email    string
-	ShopID   primitive.ObjectID // Shop mà user thuộc về
+	Username     string
+	Password     string
+	Email        string
+	Role         models.Role         // Role của user
+	ShopID       primitive.ObjectID  // Shop mà user thuộc về
+	RegionID     *primitive.ObjectID // Region (optional)
+	BranchID     *primitive.ObjectID // Branch (optional)
+	DepartmentID *primitive.ObjectID // Department (optional)
 }
 
 // RegisterOutput là kết quả sau khi đăng ký thành công
@@ -15,6 +23,7 @@ type RegisterOutput struct {
 	ID       primitive.ObjectID
 	Username string
 	Email    string
+	Role     models.Role
 	ShopID   primitive.ObjectID
 	Token    string // JWT token
 }
@@ -30,5 +39,7 @@ type LoginOutput struct {
 	ID       primitive.ObjectID
 	Username string
 	Email    string
+	Role     models.Role
+	ShopID   primitive.ObjectID
 	Token    string // JWT token
 }

@@ -41,6 +41,14 @@ func NewUnauthorizedResp() Resp {
 	}
 }
 
+// NewForbiddenResp returns a new Forbidden response
+func NewForbiddenResp() Resp {
+	return Resp{
+		ErrorCode: 403,
+		Message:   "Forbidden: You don't have permission to access this resource",
+	}
+}
+
 // Ok returns a new OK response with the given data.
 func OK(c *gin.Context, data any) {
 	c.JSON(http.StatusOK, NewOKResp(data))
@@ -49,6 +57,11 @@ func OK(c *gin.Context, data any) {
 // Unauthorized returns a new Unauthorized response with the given data.
 func Unauthorized(c *gin.Context) {
 	c.JSON(http.StatusUnauthorized, NewUnauthorizedResp())
+}
+
+// Forbidden returns a new Forbidden response
+func Forbidden(c *gin.Context) {
+	c.JSON(http.StatusForbidden, NewForbiddenResp())
 }
 
 func parseError(err error) (int, Resp) {

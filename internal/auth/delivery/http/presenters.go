@@ -10,10 +10,14 @@ import (
 
 // registerReq là cấu trúc nhận dữ liệu đăng ký từ HTTP request
 type registerReq struct {
-	Username string `json:"username" binding:"required,min=3"`
-	Password string `json:"password" binding:"required,min=6"`
-	Email    string `json:"email" binding:"required,email"`
-	ShopID   string `json:"shop_id" binding:"required"` // Shop ID
+	Username     string  `json:"username" binding:"required,min=3"`
+	Password     string  `json:"password" binding:"required,min=6"`
+	Email        string  `json:"email" binding:"required,email"`
+	Role         string  `json:"role" binding:"required"` // Role: manager, region_manager, etc.
+	ShopID       string  `json:"shop_id" binding:"required"`
+	RegionID     *string `json:"region_id,omitempty"`
+	BranchID     *string `json:"branch_id,omitempty"`
+	DepartmentID *string `json:"department_id,omitempty"`
 }
 
 // validate kiểm tra dữ liệu đầu vào
@@ -23,9 +27,32 @@ func (r registerReq) validate() error {
 		return errWrongBody
 	}
 
+	// Validate role
+	role := models.Role(r.Role)
+	if !role.IsValid() {
+		return errWrongBody
+	}
+
 	// Kiểm tra ShopID hợp lệ
 	if _, err := primitive.ObjectIDFromHex(r.ShopID); err != nil {
 		return errWrongBody
+	}
+
+	// Validate optional IDs
+	if r.RegionID != nil {
+		if _, err := primitive.ObjectIDFromHex(*r.RegionID); err != nil {
+			return errWrongBody
+		}
+	}
+	if r.BranchID != nil {
+		if _, err := primitive.ObjectIDFromHex(*r.BranchID); err != nil {
+			return errWrongBody
+		}
+	}
+	if r.DepartmentID != nil {
+		if _, err := primitive.ObjectIDFromHex(*r.DepartmentID); err != nil {
+			return errWrongBody
+		}
 	}
 
 	return nil
@@ -34,12 +61,29 @@ func (r registerReq) validate() error {
 // toInput chuyển đổi request thành input cho usecase
 func (r registerReq) toInput() auth.RegisterInput {
 	shopID, _ := primitive.ObjectIDFromHex(r.ShopID)
-	return auth.RegisterInput{
+
+	input := auth.RegisterInput{
 		Username: r.Username,
 		Password: r.Password,
 		Email:    r.Email,
+		Role:     models.Role(r.Role),
 		ShopID:   shopID,
 	}
+
+	if r.RegionID != nil {
+		regionID, _ := primitive.ObjectIDFromHex(*r.RegionID)
+		input.RegionID = &regionID
+	}
+	if r.BranchID != nil {
+		branchID, _ := primitive.ObjectIDFromHex(*r.BranchID)
+		input.BranchID = &branchID
+	}
+	if r.DepartmentID != nil {
+		deptID, _ := primitive.ObjectIDFromHex(*r.DepartmentID)
+		input.DepartmentID = &deptID
+	}
+
+	return input
 }
 
 // registerResp là cấu trúc response sau khi đăng ký thành công
@@ -47,6 +91,7 @@ type registerResp struct {
 	ID       string `json:"id"`
 	Username string `json:"username"`
 	Email    string `json:"email"`
+	Role     string `json:"role"`
 	ShopID   string `json:"shop_id"`
 	Token    string `json:"token"`
 }
@@ -57,6 +102,7 @@ func (h handler) newRegisterResp(output auth.RegisterOutput) registerResp {
 		ID:       output.ID.Hex(),
 		Username: output.Username,
 		Email:    output.Email,
+		Role:     string(output.Role),
 		ShopID:   output.ShopID.Hex(),
 		Token:    output.Token,
 	}
@@ -90,6 +136,8 @@ type loginResp struct {
 	ID       string `json:"id"`
 	Username string `json:"username"`
 	Email    string `json:"email"`
+	Role     string `json:"role"`
+	ShopID   string `json:"shop_id"`
 	Token    string `json:"token"`
 }
 
@@ -99,6 +147,8 @@ func (h handler) newLoginResp(output auth.LoginOutput) loginResp {
 		ID:       output.ID.Hex(),
 		Username: output.Username,
 		Email:    output.Email,
+		Role:     string(output.Role),
+		ShopID:   output.ShopID.Hex(),
 		Token:    output.Token,
 	}
 }
