@@ -9,6 +9,13 @@ type Config struct {
 	HTTPServer HTTPServerConfig
 	Logger     LoggerConfig
 	Mongo      MongoConfig
+	JWT        JWTConfig
+}
+
+type JWTConfig struct {
+	SecretKey       string `env:"JWT_SECRET_KEY" envDefault:"your-secret-key-change-in-production"`
+	AccessDuration  int    `env:"JWT_ACCESS_DURATION" envDefault:"86400"`   // 24 hours in seconds
+	RefreshDuration int    `env:"JWT_REFRESH_DURATION" envDefault:"604800"` // 7 days in seconds
 }
 
 type MongoConfig struct {

@@ -2,22 +2,20 @@ package jwt
 
 import (
 	"log"
+	"time"
 
 	"github.com/golang-jwt/jwt"
 )
 
 type Manager interface {
 	Verify(token string) (Payload, error)
+	Generate(payload Payload, duration time.Duration) (string, error)
 }
 
 type Payload struct {
 	jwt.StandardClaims
-	UserID       string `json:"sub"`
-	ShopID       string `json:"shop_id"`
-	ShopUsername string `json:"shop_username"`
-	ShopPrefix   string `json:"shop_prefix"`
-	Type         string `json:"type"`
-	Refresh      bool   `json:"refresh"`
+	UserID   string `json:"user_id"`
+	Username string `json:"username"`
 }
 
 type implManager struct {
@@ -58,4 +56,23 @@ func (m implManager) Verify(token string) (Payload, error) {
 	}
 
 	return *payload, nil
+}
+
+// Generate generates a new JWT token with the given payload and duration
+func (m implManager) Generate(payload Payload, duration time.Duration) (string, error) {
+	// Set expiration time
+	payload.ExpiresAt = time.Now().Add(duration).Unix()
+	payload.IssuedAt = time.Now().Unix()
+
+	// Create token
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
+
+	// Sign token with secret key
+	tokenString, err := token.SignedString([]byte(m.secretKey))
+	if err != nil {
+		log.Printf("jwt.Generate: %v", err)
+		return "", ErrGenerateToken
+	}
+
+	return tokenString, nil
 }

@@ -96,11 +96,11 @@ func (repo implRepository) Delete(ctx context.Context, sc models.Scope, id primi
 
 // HasUsers kiểm tra xem department có user nào không
 func (repo implRepository) HasUsers(ctx context.Context, departmentID primitive.ObjectID) (bool, error) {
-	departmentCollection := repo.db.Collection("departments")
+	userCollection := repo.db.Collection("users")
 
 	// Đếm số user thuộc department này
 	filter := bson.M{"department_id": departmentID}
-	count, err := departmentCollection.CountDocuments(ctx, filter)
+	count, err := userCollection.CountDocuments(ctx, filter)
 	if err != nil {
 		repo.l.Errorf(ctx, "department.mongo.HasUsers.CountDocuments: %v", err)
 		return false, err

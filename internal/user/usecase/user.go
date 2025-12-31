@@ -2,12 +2,57 @@ package usecase
 
 import (
 	"context"
+	"fmt"
 
 	"thuchanhgolang/internal/models"
 	"thuchanhgolang/internal/user"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"golang.org/x/crypto/bcrypt"
 )
+
+// Register đăng ký user mới (chỉ thông tin cơ bản)
+func (uc *implUsecase) Register(ctx context.Context, input user.RegisterInput) (models.User, error) {
+	// 1. Validate input
+	if input.Username == "" {
+		return models.User{}, fmt.Errorf("username is required")
+	}
+	if input.Password == "" {
+		return models.User{}, fmt.Errorf("password is required")
+	}
+	if input.Email == "" {
+		return models.User{}, fmt.Errorf("email is required")
+	}
+
+	// 2. Kiểm tra username đã tồn tại chưa
+	existingUser, err := uc.repo.GetByUsername(ctx, input.Username)
+	if err == nil && existingUser.ID != primitive.NilObjectID {
+		return models.User{}, fmt.Errorf("username already exists")
+	}
+
+	// 3. Hash password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
+	if err != nil {
+		uc.l.Errorf(ctx, "user.usecase.Register.bcrypt.GenerateFromPassword: %v", err)
+		return models.User{}, fmt.Errorf("failed to hash password")
+	}
+
+	// 4. Tạo RegisterOptions
+	opts := user.RegisterOptions{
+		Username: input.Username,
+		Password: string(hashedPassword),
+		Email:    input.Email,
+	}
+
+	// 5. Gọi repository để lưu vào database
+	newUser, err := uc.repo.Register(ctx, opts)
+	if err != nil {
+		uc.l.Errorf(ctx, "user.usecase.Register.repo.Register: %v", err)
+		return models.User{}, err
+	}
+
+	return newUser, nil
+}
 
 // Create tạo user mới
 func (uc *implUsecase) Create(ctx context.Context, sc models.Scope, input user.CreateInput) (models.User, error) {
@@ -16,51 +61,25 @@ func (uc *implUsecase) Create(ctx context.Context, sc models.Scope, input user.C
 
 	// TH1: Có department_id → cascade query: Department → Branch → Region
 	if input.DepartmentID != nil {
-		// 1. Lấy Department
-		dept, err := uc.deptRepo.GetByID(ctx, sc, *input.DepartmentID)
+		result, err := uc.queryService.ResolveFromDepartment(ctx, sc, *input.DepartmentID)
 		if err != nil {
-			uc.l.Errorf(ctx, "user.usecase.Create.deptRepo.GetByID: %v", err)
 			return models.User{}, err
 		}
-		branchID = dept.BranchID
-		departmentID = input.DepartmentID
-
-		// 2. Lấy Branch từ Department.BranchID
-		br, err := uc.branchRepo.GetByID(ctx, sc, dept.BranchID)
-		if err != nil {
-			uc.l.Errorf(ctx, "user.usecase.Create.branchRepo.GetByID: %v", err)
-			return models.User{}, err
-		}
-		regionID = br.RegionID
-
-		// 3. Lấy Region từ Branch.RegionID
-		reg, err := uc.regionRepo.GetByID(ctx, sc, br.RegionID)
-		if err != nil {
-			uc.l.Errorf(ctx, "user.usecase.Create.regionRepo.GetByID: %v", err)
-			return models.User{}, err
-		}
-		shopID = reg.ShopID
+		shopID = result.ShopID
+		regionID = result.RegionID
+		branchID = result.BranchID
+		departmentID = result.DepartmentID
 
 	} else if input.BranchID != primitive.NilObjectID {
 		// TH2: Có branch_id (không có department) → cascade query: Branch → Region
-		branchID = input.BranchID
-		departmentID = nil
-
-		// 1. Lấy Branch
-		br, err := uc.branchRepo.GetByID(ctx, sc, input.BranchID)
+		result, err := uc.queryService.ResolveFromBranch(ctx, sc, input.BranchID)
 		if err != nil {
-			uc.l.Errorf(ctx, "user.usecase.Create.branchRepo.GetByID: %v", err)
 			return models.User{}, err
 		}
-		regionID = br.RegionID
-
-		// 2. Lấy Region từ Branch.RegionID
-		reg, err := uc.regionRepo.GetByID(ctx, sc, br.RegionID)
-		if err != nil {
-			uc.l.Errorf(ctx, "user.usecase.Create.regionRepo.GetByID: %v", err)
-			return models.User{}, err
-		}
-		shopID = reg.ShopID
+		shopID = result.ShopID
+		regionID = result.RegionID
+		branchID = result.BranchID
+		departmentID = result.DepartmentID
 
 	} else {
 		// TH3: Fallback - sử dụng các ID được cung cấp trực tiếp (backward compatibility)
@@ -70,10 +89,17 @@ func (uc *implUsecase) Create(ctx context.Context, sc models.Scope, input user.C
 		departmentID = input.DepartmentID
 	}
 
+	// Hash password trước khi lưu
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
+	if err != nil {
+		uc.l.Errorf(ctx, "user.usecase.Create.bcrypt: %v", err)
+		return models.User{}, err
+	}
+
 	// Chuyển đổi thành options cho repository
 	opts := user.CreateOptions{
 		Username:     input.Username,
-		Password:     input.Password,
+		Password:     string(hashedPassword), // Sử dụng password đã hash
 		Email:        input.Email,
 		ShopID:       shopID,
 		RegionID:     regionID,
@@ -111,61 +137,45 @@ func (uc *implUsecase) Update(ctx context.Context, sc models.Scope, input user.U
 
 	// TH1: Update department_id → cascade query để lấy tất cả parent IDs
 	if input.DepartmentID != nil {
-		// 1. Lấy Department
-		dept, err := uc.deptRepo.GetByID(ctx, sc, *input.DepartmentID)
+		result, err := uc.queryService.ResolveFromDepartment(ctx, sc, *input.DepartmentID)
 		if err != nil {
-			uc.l.Errorf(ctx, "user.usecase.Update.deptRepo.GetByID: %v", err)
 			return models.User{}, err
 		}
-		resolvedBranchID = &dept.BranchID
-		resolvedDepartmentID = input.DepartmentID
-
-		// 2. Lấy Branch từ Department.BranchID
-		br, err := uc.branchRepo.GetByID(ctx, sc, dept.BranchID)
-		if err != nil {
-			uc.l.Errorf(ctx, "user.usecase.Update.branchRepo.GetByID: %v", err)
-			return models.User{}, err
-		}
-		resolvedRegionID = &br.RegionID
-
-		// 3. Lấy Region từ Branch.RegionID
-		reg, err := uc.regionRepo.GetByID(ctx, sc, br.RegionID)
-		if err != nil {
-			uc.l.Errorf(ctx, "user.usecase.Update.regionRepo.GetByID: %v", err)
-			return models.User{}, err
-		}
-		resolvedShopID = &reg.ShopID
+		resolvedShopID = &result.ShopID
+		resolvedRegionID = &result.RegionID
+		resolvedBranchID = &result.BranchID
+		resolvedDepartmentID = result.DepartmentID
 
 	} else if input.BranchID != nil && *input.BranchID != primitive.NilObjectID {
 		// TH2: Update branch_id (không update department) → cascade query để lấy shop & region
-		resolvedBranchID = input.BranchID
+		result, err := uc.queryService.ResolveFromBranch(ctx, sc, *input.BranchID)
+		if err != nil {
+			return models.User{}, err
+		}
+		resolvedShopID = &result.ShopID
+		resolvedRegionID = &result.RegionID
+		resolvedBranchID = &result.BranchID
 		// Khi update branch → xóa department (user không còn thuộc dept nữa)
 		emptyID := primitive.NilObjectID
 		resolvedDepartmentID = &emptyID
-
-		// 1. Lấy Branch
-		br, err := uc.branchRepo.GetByID(ctx, sc, *input.BranchID)
-		if err != nil {
-			uc.l.Errorf(ctx, "user.usecase.Update.branchRepo.GetByID: %v", err)
-			return models.User{}, err
-		}
-		resolvedRegionID = &br.RegionID
-
-		// 2. Lấy Region từ Branch.RegionID
-		reg, err := uc.regionRepo.GetByID(ctx, sc, br.RegionID)
-		if err != nil {
-			uc.l.Errorf(ctx, "user.usecase.Update.regionRepo.GetByID: %v", err)
-			return models.User{}, err
-		}
-		resolvedShopID = &reg.ShopID
 	}
 
 	// Build options: Ưu tiên resolved IDs, fallback về input IDs
 	opts := user.UpdateOptions{
 		ID:       input.ID,
 		Username: input.Username,
-		Password: input.Password,
 		Email:    input.Email,
+	}
+
+	// Hash password nếu có thay đổi
+	if input.Password != nil && *input.Password != "" {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(*input.Password), bcrypt.DefaultCost)
+		if err != nil {
+			uc.l.Errorf(ctx, "user.usecase.Update.bcrypt: %v", err)
+			return models.User{}, err
+		}
+		hashedStr := string(hashedPassword)
+		opts.Password = &hashedStr
 	}
 
 	// Sử dụng resolved IDs nếu có, không thì dùng input IDs

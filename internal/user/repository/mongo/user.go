@@ -20,6 +20,44 @@ func (repo implRepository) getUserCollection() mongo.Collection {
 	return repo.db.Collection(userCollection)
 }
 
+// Register tạo user mới trong MongoDB với thông tin cơ bản
+func (repo implRepository) Register(ctx context.Context, opts user.RegisterOptions) (models.User, error) {
+	col := repo.getUserCollection()
+
+	// Tạo user object mới (chỉ thông tin cơ bản)
+	newUser := models.User{
+		ID:       repo.db.NewObjectID(),
+		Username: opts.Username,
+		PassWord: opts.Password, // Password đã được hash
+		Email:    opts.Email,
+	}
+
+	// Lưu vào database
+	_, err := col.InsertOne(ctx, newUser)
+	if err != nil {
+		repo.l.Errorf(ctx, "user.mongo.Register.InsertOne: %v", err)
+		return models.User{}, err
+	}
+
+	return newUser, nil
+}
+
+// GetByUsername lấy user theo username từ MongoDB
+func (repo implRepository) GetByUsername(ctx context.Context, username string) (models.User, error) {
+	col := repo.getUserCollection()
+
+	// Tìm user theo username
+	var user models.User
+	filter := bson.M{"username": username}
+	err := col.FindOne(ctx, filter).Decode(&user)
+	if err != nil {
+		// Không log error nếu không tìm thấy (dùng để check exists)
+		return models.User{}, err
+	}
+
+	return user, nil
+}
+
 // Create tạo user mới trong MongoDB
 func (repo implRepository) Create(ctx context.Context, sc models.Scope, opts user.CreateOptions) (models.User, error) {
 	col := repo.getUserCollection()

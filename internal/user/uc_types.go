@@ -2,6 +2,13 @@ package user
 
 import "go.mongodb.org/mongo-driver/bson/primitive"
 
+// RegisterInput là input để đăng ký user mới (chỉ cần thông tin cơ bản)
+type RegisterInput struct {
+	Username string
+	Password string
+	Email    string
+}
+
 // CreateInput là input để tạo user từ HTTP layer
 type CreateInput struct {
 	Username     string

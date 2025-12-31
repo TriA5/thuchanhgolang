@@ -25,7 +25,7 @@ func (h handler) create(c *gin.Context) {
 	user, err := h.uc.Create(ctx, sc, req.toInput())
 	if err != nil {
 		h.l.Warnf(ctx, "user.handler.create.uc.Create: %s", err)
-		mapErr := h.mapError(err)
+		mapErr := h.mapError(err)   
 		response.Error(c, mapErr)
 		return
 	}

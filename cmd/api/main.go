@@ -6,6 +6,7 @@ import (
 	"thuchanhgolang/internal/appconfig/mongo"
 	"thuchanhgolang/internal/httpserver"
 	pkgLog "thuchanhgolang/pkg/log"
+	"time"
 )
 
 func main() {
@@ -40,8 +41,10 @@ func main() {
 	// Sử dụng db để làm việc với collections
 	// collection := db.Collection("your-collection")
 	srv := httpserver.New(l, httpserver.Config{
-		Port:     cfg.HTTPServer.Port,
-		Database: db,
+		Port:           cfg.HTTPServer.Port,
+		Database:       db,
+		JWTSecretKey:   cfg.JWT.SecretKey,
+		AccessDuration: time.Duration(cfg.JWT.AccessDuration) * time.Second,
 	})
 	srv.Run()
 }

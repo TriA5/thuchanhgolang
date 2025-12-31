@@ -173,9 +173,9 @@ type detailResp struct {
 	ID           string  `json:"id"`
 	Username     string  `json:"username"`
 	Email        string  `json:"email"`
-	ShopID       string  `json:"shop_id"`
-	RegionID     string  `json:"region_id"`
-	BranchID     string  `json:"branch_id"`
+	ShopID       string  `json:"shop_id,omitempty"`
+	RegionID     string  `json:"region_id,omitempty"`
+	BranchID     string  `json:"branch_id,omitempty"`
 	DepartmentID *string `json:"department_id,omitempty"`
 }
 
@@ -185,12 +185,19 @@ func (h handler) newDetailResp(d models.User) detailResp {
 		ID:       d.ID.Hex(),
 		Username: d.Username,
 		Email:    d.Email,
-		ShopID:   d.ShopID.Hex(),
-		RegionID: d.RegionID.Hex(),
-		BranchID: d.BranchID.Hex(),
 	}
 
-	if d.DepartmentID != nil {
+	// Chỉ thêm các field nếu có giá trị (không phải zero value)
+	if d.ShopID != primitive.NilObjectID {
+		resp.ShopID = d.ShopID.Hex()
+	}
+	if d.RegionID != primitive.NilObjectID {
+		resp.RegionID = d.RegionID.Hex()
+	}
+	if d.BranchID != primitive.NilObjectID {
+		resp.BranchID = d.BranchID.Hex()
+	}
+	if d.DepartmentID != nil && *d.DepartmentID != primitive.NilObjectID {
 		deptID := d.DepartmentID.Hex()
 		resp.DepartmentID = &deptID
 	}
