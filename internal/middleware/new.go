@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"thuchanhgolang/internal/models"
 	"thuchanhgolang/pkg/encrypter"
 	"thuchanhgolang/pkg/jwt"
 	"thuchanhgolang/pkg/log"
@@ -10,6 +11,13 @@ import (
 
 type Middleware interface {
 	Auth() gin.HandlerFunc
+	RequireRole(allowedRoles ...models.Role) gin.HandlerFunc
+	CheckShopAccess() gin.HandlerFunc
+	CheckRegionAccess() gin.HandlerFunc
+	CheckBranchAccess() gin.HandlerFunc
+	CheckDepartmentAccess() gin.HandlerFunc
+	CheckUserAccess() gin.HandlerFunc
+	SetScopeFromPayload() gin.HandlerFunc
 }
 
 type implMiddleware struct {

@@ -9,6 +9,7 @@ type User struct {
 	Username     string              `bson:"username"`
 	PassWord     string              `bson:"password"`
 	Email        string              `bson:"email"`
+	Role         Role                `bson:"role"` // Role của user
 	ShopID       primitive.ObjectID  `bson:"shop_id"`
 	RegionID     primitive.ObjectID  `bson:"region_id"`
 	BranchID     primitive.ObjectID  `bson:"branch_id"`

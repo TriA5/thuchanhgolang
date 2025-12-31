@@ -34,20 +34,32 @@ func (uc *implUsecase) Register(ctx context.Context, sc models.Scope, input auth
 
 	// 3. Tạo user trong database
 	newUser, err := uc.repo.CreateUser(ctx, auth.CreateUserOptions{
-		Username: input.Username,
-		Password: string(hashedPassword),
-		Email:    input.Email,
-		ShopID:   input.ShopID,
+		Username:     input.Username,
+		Password:     string(hashedPassword),
+		Email:        input.Email,
+		Role:         input.Role,
+		ShopID:       input.ShopID,
+		RegionID:     input.RegionID,
+		BranchID:     input.BranchID,
+		DepartmentID: input.DepartmentID,
 	})
 	if err != nil {
 		uc.l.Errorf(ctx, "auth.usecase.Register.CreateUser: %v", err)
 		return auth.RegisterOutput{}, err
 	}
 
-	// 4. Generate JWT token
+	// 4. Generate JWT token với role và scope
 	payload := jwt.Payload{
 		UserID:   newUser.ID.Hex(),
 		Username: newUser.Username,
+		Role:     string(newUser.Role),
+		ShopID:   newUser.ShopID.Hex(),
+	}
+	if !newUser.RegionID.IsZero() {
+		payload.RegionID = newUser.RegionID.Hex()
+	}
+	if !newUser.BranchID.IsZero() {
+		payload.BranchID = newUser.BranchID.Hex()
 	}
 
 	token, err := uc.jwtManager.Generate(payload, uc.accessDuration)
@@ -61,6 +73,7 @@ func (uc *implUsecase) Register(ctx context.Context, sc models.Scope, input auth
 		ID:       newUser.ID,
 		Username: newUser.Username,
 		Email:    newUser.Email,
+		Role:     newUser.Role,
 		ShopID:   newUser.ShopID,
 		Token:    token,
 	}, nil
@@ -82,10 +95,18 @@ func (uc *implUsecase) Login(ctx context.Context, sc models.Scope, input auth.Lo
 		return auth.LoginOutput{}, auth.ErrInvalidCredentials
 	}
 
-	// 3. Generate JWT token
+	// 3. Generate JWT token với role và scope
 	payload := jwt.Payload{
 		UserID:   user.ID.Hex(),
 		Username: user.Username,
+		Role:     string(user.Role),
+		ShopID:   user.ShopID.Hex(),
+	}
+	if !user.RegionID.IsZero() {
+		payload.RegionID = user.RegionID.Hex()
+	}
+	if !user.BranchID.IsZero() {
+		payload.BranchID = user.BranchID.Hex()
 	}
 
 	token, err := uc.jwtManager.Generate(payload, uc.accessDuration)
@@ -99,6 +120,8 @@ func (uc *implUsecase) Login(ctx context.Context, sc models.Scope, input auth.Lo
 		ID:       user.ID,
 		Username: user.Username,
 		Email:    user.Email,
+		Role:     user.Role,
+		ShopID:   user.ShopID,
 		Token:    token,
 	}, nil
 }

@@ -16,6 +16,10 @@ type Payload struct {
 	jwt.StandardClaims
 	UserID   string `json:"user_id"`
 	Username string `json:"username"`
+	Role     string `json:"role"` // Role của user
+	ShopID   string `json:"shop_id,omitempty"`
+	RegionID string `json:"region_id,omitempty"`
+	BranchID string `json:"branch_id,omitempty"`
 }
 
 type implManager struct {

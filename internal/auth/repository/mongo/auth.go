@@ -16,11 +16,21 @@ func (repo *implRepository) CreateUser(ctx context.Context, opts auth.CreateUser
 
 	// Tạo user object
 	newUser := models.User{
-		ID:       repo.db.NewObjectID(),
-		Username: opts.Username,
-		PassWord: opts.Password, // Password đã được hash
-		Email:    opts.Email,
-		ShopID:   opts.ShopID,
+		ID:           repo.db.NewObjectID(),
+		Username:     opts.Username,
+		PassWord:     opts.Password, // Password đã được hash
+		Email:        opts.Email,
+		Role:         opts.Role,
+		ShopID:       opts.ShopID,
+		DepartmentID: opts.DepartmentID,
+	}
+
+	// Set RegionID và BranchID nếu có
+	if opts.RegionID != nil {
+		newUser.RegionID = *opts.RegionID
+	}
+	if opts.BranchID != nil {
+		newUser.BranchID = *opts.BranchID
 	}
 
 	// Lưu vào database
